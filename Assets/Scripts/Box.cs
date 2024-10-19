@@ -1,11 +1,9 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Box : MonoBehaviour
 {
     public int index;
-    public Mark mark;
+    public MarkEnum mark;
     public bool isMarked;
 
     private SpriteRenderer SpriteRenderer;
@@ -17,7 +15,7 @@ public class Box : MonoBehaviour
         isMarked = false;
     }
 
-    public void SetAsMarked(Sprite sprite, Mark mark, Color color) {
+    public void SetAsMarked(Sprite sprite, MarkEnum mark, Color color) {
         isMarked = true;
         this.mark = mark;
 

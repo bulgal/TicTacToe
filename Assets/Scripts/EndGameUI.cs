@@ -1,11 +1,9 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
 
-public class WinUI : MonoBehaviour
+public class EndGameUI : MonoBehaviour
 {
     [Header("UI References : ")]
     [SerializeField] private GameObject uiCanvas;
@@ -17,13 +15,13 @@ public class WinUI : MonoBehaviour
 
     private void Start() {
         uiRestartButton.onClick.AddListener(() => SceneManager.LoadScene(0));
-        board.OnWinAction += OnWinEvent;
+        board.OnEndGameAction += OnEndGameEvent;
 
         uiCanvas.SetActive(false);
     }
 
-    private void OnWinEvent(Mark mark, Color color) {
-        uiWinnerText.text = (mark == Mark.None) ? "Nobody wins" : mark.ToString() + " Wins!";
+    private void OnEndGameEvent(MarkEnum mark, Color color) {
+        uiWinnerText.text = (mark == MarkEnum.None) ? "Nobody wins" : mark.ToString() + " Wins!";
         uiWinnerText.color = color;
 
         uiCanvas.SetActive(true);
@@ -31,6 +29,6 @@ public class WinUI : MonoBehaviour
 
     private void OnDestroy() {
         uiRestartButton.onClick.RemoveAllListeners();
-        board.OnWinAction -= OnWinEvent;
+        board.OnEndGameAction -= OnEndGameEvent;
     }
 }

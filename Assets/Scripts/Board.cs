@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -17,94 +15,86 @@ public class Board : MonoBehaviour
     [SerializeField] private Color colorX;
     [SerializeField] private Color colorO;
 
-    public UnityAction<Mark,Color> OnWinAction;
-    public Mark[] marks;
+    public UnityAction<MarkEnum,Color> OnEndGameAction;
+    public MarkEnum[] boardMatrix;
     private Camera cam;
-    private Mark currentMark;
+    private MarkEnum currentMark;
     private bool canPlay;
     private LineRenderer lineRenderer;
     private int marksCount = 0;
 
     private void Start() {
         cam = Camera.main;
+        currentMark = MarkEnum.X;
+        boardMatrix = new MarkEnum[9];
+        canPlay = true;
+
         lineRenderer = GetComponent<LineRenderer>();
         lineRenderer.enabled = false;
-
-        currentMark = Mark.X;
-
-        marks = new Mark[9];
-
-        canPlay = true;
     }
 
     private void Update() {
-        if (canPlay && Input.GetMouseButtonUp(0)) {
+        if (!canPlay || !Input.GetMouseButtonUp(0)) {
+            return;
+        }
 
-            Vector2 touchPosition = cam.ScreenToWorldPoint(Input.mousePosition);
-
-            Collider2D hit = Physics2D.OverlapCircle(touchPosition, touchRadius, boxesLayerMask);
-
-            Debug.Log(hit);
-            if (hit) {
-                HitBox(hit.GetComponent<Box>());
-            }
+        Collider2D hit = Physics2D.OverlapCircle(cam.ScreenToWorldPoint(Input.mousePosition), touchRadius, boxesLayerMask);
+        if (hit) {
+            HitBox(hit.GetComponent<Box>());
         }
     }
 
     private void HitBox(Box box) {
-        Debug.Log("Hit Box");
-        if (!box.isMarked) {
-            marks[box.index] = currentMark;
-
-            box.SetAsMarked(GetSpite(), currentMark, GetColor());
-            marksCount++;
-
-            bool won = CheckIfWin();
-            if (won) {
-                if (OnWinAction != null) {
-                    OnWinAction.Invoke(currentMark, GetColor());
-                }
-                Debug.Log(currentMark.ToString() + " Wins.");
-
-                canPlay = false;
-                return;
-            }
-
-            if (marksCount == 9) {
-                if (OnWinAction != null) {
-                    OnWinAction.Invoke(Mark.None, Color.white);
-                }
-                Debug.Log("Nobody Wins.");
-
-                canPlay = false;
-                return;
-            }
-
-            SwitchPlayer();
+        if (box.isMarked) {
+            return;
         }
+        marksCount++;
+
+        boardMatrix[box.index] = currentMark;
+        box.SetAsMarked(GetSpite(), currentMark, GetColor());
+
+        if (IsGameEnd()) {
+            return;
+        }
+        SwitchPlayer();
     }
 
-    private bool CheckIfWin() {
-        return
-        AreBoxesMatched(0, 1, 2) || AreBoxesMatched(3, 4, 5) || AreBoxesMatched(6, 7, 8) ||
+
+    private bool IsGameEnd() {
+        bool win = AreBoxesMatched(0, 1, 2) || AreBoxesMatched(3, 4, 5) || AreBoxesMatched(6, 7, 8) ||
         AreBoxesMatched(0, 3, 6) || AreBoxesMatched(1, 4, 7) || AreBoxesMatched(2, 5, 8) ||
         AreBoxesMatched(0, 4, 8) || AreBoxesMatched(2, 4, 6);
+
+        if (win || marksCount == 9) {
+            if (OnEndGameAction != null) {
+                OnEndGameAction.Invoke(
+                    win ? currentMark : MarkEnum.None,
+                    win ? GetColor() : Color.black
+                );
+            }
+            canPlay = false;
+            return true;
+        }
+
+        return false;
     }
 
-    private bool AreBoxesMatched(int i, int j, int k) {
-        Mark m = currentMark;
-        bool matched = marks[i] == m && marks[j] == m && marks[k] == m;
+    private bool AreBoxesMatched(int firstBox, int secondBox, int lastBox) {
+        bool matched =
+            boardMatrix[firstBox] == currentMark
+            && boardMatrix[secondBox] == currentMark
+            && boardMatrix[lastBox] == currentMark;
 
         if (matched) {
-            DrawLine(i, k);
+            DrawLine(firstBox, lastBox);
         }
 
         return matched;
     }
 
-    private void DrawLine(int i, int k) {
-        lineRenderer.SetPosition(0, transform.GetChild(i).position);
-        lineRenderer.SetPosition(1, transform.GetChild(k).position);
+    private void DrawLine(int firstBox, int lastBox) {
+        lineRenderer.SetPosition(0, transform.GetChild(firstBox).position);
+        lineRenderer.SetPosition(1, transform.GetChild(lastBox).position);
 
         Color color = GetColor();
         color.a = .3f;
@@ -115,14 +105,14 @@ public class Board : MonoBehaviour
     }
 
     private void SwitchPlayer() {
-        currentMark = (currentMark == Mark.X) ? Mark.O : Mark.X;
+        currentMark = (currentMark == MarkEnum.X) ? MarkEnum.O : MarkEnum.X;
     }
 
     private Color GetColor() {
-        return (currentMark == Mark.X) ? colorX : colorO;
+        return (currentMark == MarkEnum.X) ? colorX : colorO;
     }
 
     private Sprite GetSpite() {
-        return (currentMark == Mark.X) ? spriteX : spriteO;
+        return (currentMark == MarkEnum.X) ? spriteX : spriteO;
     }
 }
